@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarot 5‑Card Spread</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;
+  background:#220b38;
+  background-image:
+    radial-gradient(circle at 12% 20%, #702ea8 0%, transparent 52%),
+    radial-gradient(circle at 85% 15%, #c74e88 0%, transparent 48%),
+    linear-gradient(175deg,#270e42 0%,#40185e 50%,#63245b 100%);
+  font-family:Georgia,serif;
+  color:#f8e8ff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:40px 16px;
+  position:relative;
+  overflow-x:hidden;
+}
+.stars{
+  position:fixed;
+  width:100%;
+  height:100%;
+  top:0;
+  left:0;
+  pointer-events:none;
+  z-index:0;
+  background-image:
+  radial-gradient(2px 2px at 30px 50px,#ffffff,rgba(255,255,255,0)),
+  radial-gradient(1px 1px at 70px 120px,#fff7d8,rgba(255,255,255,0)),
+  radial-gradient(2px 2px at 130px 80px,#ffd8f8,rgba(255,255,255,0));
+  background-size:220px 220px;
+  animation:twinkle 5s infinite ease‑in‑out;
+  opacity:0.7;
+}
+@keyframes twinkle{
+  0%{opacity:0.4}
+  50%{opacity:0.85}
+  100%{opacity:0.4}
+}
+h1{
+  font-weight:normal;
+  letter-spacing:2px;
+  margin-bottom:36px;
+  font-size:24px;
+  color:#ffd6ff;
+  text-shadow:0 0 16px #b868e2,0 0 28px #ff7eb3;
+  position:relative;
+  z-index:2;
+}
+.cards-row{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  justify-content:center;
+  perspective:1100px;
+  min-height:430px;
+  margin-bottom:32px;
+  position:relative;
+  z-index:2;
+}
+/*卡牌尺寸放大 宽180 高296 */
+.card{
+  width:180px;
+  height:296px;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform .72s ease;
+}
+.card.flip{transform:rotateY(180deg)}
+.card.reverse .card-front img{
+  transform:rotate(180deg);
+}
+.card-front,.card-back{
+  position:absolute;
+  width:100%;
+  height:100%;
+  border-radius:12px;
+  backface-visibility:hidden;
+  border:2px solid #d8a8ff;
+  overflow:hidden;
+}
+.card-back{
+  background:#381b57;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#e2cfff;
+  font-size:22px;
+}
+.card-front{
+  transform:rotateY(180deg);
+  background:#ffffff;
+}
+.card-front img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transition:0s;
+}
+.btns{margin-bottom:24px;position:relative;z-index:2}
+button{
+  padding:11px 26px;
+  border:1px solid #d8a8ff;
+  background:rgba(90, 31, 107, 0.25);
+  color:#ffecff;
+  border-radius:30px;
+  font-size:15px;
+  cursor:pointer;
+  transition:.3s;
+  margin:0 6px;
+}
+button:hover{
+  background:rgba(157, 78, 234, 0.35);
+  box-shadow:0 0 14px rgba(255, 126, 170, 0.55);
+}
+button:disabled{opacity:0.35;cursor:not-allowed}
+.result-text{
+  max-width:820px;
+  text-align:center;
+  line-height:1.75;
+  color:#f2dff7;
+  position:relative;
+  z-index:2;
+}
+.single-desc{margin-top:12px;padding:6px}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<h1>Five‑Card Tarot Spread</h1>
+<div class="cards-row" id="cardsContainer"></div>
+<div class="btns">
+  <button id="drawOneBtn">Draw Next Card</button>
+  <button id="resetBtn">Restart Spread</button>
+</div>
+<div class="result-text" id="textBox"></div>
+
+<script>
+const cardList = [
+  {img:"arcana00.jpg",name:"00 The Fool",up:"新冒险、天真、无限可能性、跟随直觉",down:"鲁莽、逃避责任、盲目冲动、犹豫不安"},
+  {img:"arcana01.jpg",name:"01 The Magician",up:"创造力、行动力、资源充足、心想事成",down:"能力滥用、投机取巧、意志力涣散"},
+  {img:"arcana02.jpg",name:"02 The High Priestess",up:"内在直觉、潜意识、静默等待、神秘智慧",down:"情绪封闭、忽视直觉、猜忌与迷茫"},
+  {img:"arcana03.jpg",name:"03 The Empress",up:"丰饶、温柔创造力、滋养、美好收获",down:"慵懒停滞、过度放纵、创造力受阻"},
+  {img:"arcana04.jpg",name:"04 The Emperor",up:"稳定秩序、领导力、理性掌控、踏实规划",down:"强势固执、控制欲、死板不懂变通"},
+  {img:"arcana05.jpg",name:"05 The Hierophant",up:"传统指引、学习成长、寻求建议、信念",down:"墨守成规、教条主义、抗拒改变"},
+  {img:"arcana06.jpg",name:"06 The Lovers",up:"真爱联结、重要抉择、价值观契合、选择",down:"两难纠结、关系失衡、错误决定"},
+  {img:"arcana07.jpg",name:"07 The Chariot",up:"勇往直前、意志力、目标清晰、克服阻碍",down:"方向迷失、冲动对抗、精力耗竭"},
+  {img:"arcana08.jpg",name:"08 Strength",up:"内心勇气、温柔力量、耐心自控、包容",down:"内心怯懦、自我怀疑、情绪失控"},
+  {img:"arcana09.jpg",name:"09 The Hermit",up:"向内探索、独处自省、沉淀思考、智慧",down:"孤独封闭、逃避社交、钻牛角尖"},
+  {img:"arcana10.jpg",name:"10 Wheel of Fortune",up:"运势转机、命运轮转、机遇来临、变化",down:"厄运波动、错失机会、抗拒改变"},
+  {img:"arcana11.jpg",name:"11 Justice",up:"公平抉择、因果平衡、理性决断、责任",down:"偏袒不公、犹豫拖延、逃避后果"},
+  {img:"arcana12.jpg",name:"12 The Hanged Man",up:"换位思考、主动等待、换视角、放下执念",down:"无谓牺牲、停滞不前、钻死胡同"},
+  {img:"arcana13.jpg",name:"13 Death",up:"结束与新生、蜕变、告别过去、重大转变",down:"抗拒变化、陷入低谷、无法释怀"},
+  {img:"arcana14.jpg",name:"14 Temperance",up:"平衡调和、耐心磨合、稳步前进、疗愈",down:"失衡急躁、缺乏耐心、节奏混乱"},
+  {img:"arcana15.jpg",name:"15 The Devil",up:"欲望、束缚、执念、看清内心枷锁",down:"挣脱诱惑、走出成瘾、摆脱捆绑"},
+  {img:"arcana16.jpg",name:"16 The Tower",up:"突如其来巨变、打破假象、危机觉醒",down:"抗拒崩塌、持续内耗、害怕改变"},
+  {img:"arcana17.jpg",name:"17 The Star",up:"希望、治愈、信念、未来充满曙光",down:"信心缺失、悲观迷茫、期待落空"},
+  {img:"arcana18.jpg",name:"18 The Moon",up:"潜意识、不安、幻象、隐藏的秘密",down:"走出恐惧、拨开迷雾、看清真相"},
+  {img:"arcana19.jpg",name:"19 The Sun",up:"纯粹快乐、成功、活力、明朗顺遂",down:"骄傲自负、短暂喜悦、乐观盲目"},
+  {img:"arcana20.jpg",name:"20 Judgement",up:"觉醒、复盘反思、迎来召唤、自我重生",down:"无视提醒、沉溺过去、拒绝改变"},
+  {img:"arcana21.jpg",name:"21 The World",up:"圆满完成、目标达成、旅程收官、成就感",down:"停滞不前、缺憾遗憾、无法收尾"}
+];
+
+const maxDrawCount = 5;
+const container = document.getElementById("cardsContainer");
+const drawBtn = document.getElementById("drawOneBtn");
+const resetBtn = document.getElementById("resetBtn");
+const textBox = document.getElementById("textBox");
+
+let drawnPool = [];
+let finishedCards = [];
+
+drawBtn.onclick = function(){
+  if(finishedCards.length >= maxDrawCount) return;
+  let randomIndex;
+  do{
+    randomIndex = Math.floor(Math.random() * cardList.length);
+  }while(drawnPool.includes(randomIndex));
+
+  drawnPool.push(randomIndex);
+  const pickedCard = cardList[randomIndex];
+  const isReverse = Math.random() > 0.5;
+  finishedCards.push({...pickedCard,reverse:isReverse});
+
+  const cardDiv = document.createElement("div");
+  cardDiv.className = "card";
+  if(isReverse){
+    cardDiv.classList.add("reverse");
+  }
+  cardDiv.innerHTML = `
+    <div class="card-back">?</div>
+    <div class="card-front"><img src="${pickedCard.img}" alt=""></div>
+  `;
+  container.appendChild(cardDiv);
+
+  setTimeout(()=>{
+    cardDiv.classList.add("flip");
+    textBox.innerHTML = finishedCards.map((c,i)=>{
+      const posText = c.reverse ? "【逆位】" : "【正位】";
+      const descText = c.reverse ? c.down : c.up;
+      return `<div class="single-desc">
+        <strong>Card ${i+1}：${c.name} ${posText}</strong><br>${descText}
+      </div>`;
+    }).join("");
+  },320);
+
+  if(finishedCards.length === maxDrawCount){
+    drawBtn.disabled = true;
+  }
+}
+
+resetBtn.onclick = function(){
+  container.innerHTML = "";
+  textBox.innerHTML = "";
+  drawnPool = [];
+  finishedCards = [];
+  drawBtn.disabled = false;
+}
+</script>
+</body>
+</html>
